@@ -40,7 +40,7 @@ const Footer = () => (
   <footer className="text-sm text-center text-gray-400 py-8 border-t border-gray-700 mt-20">
     Built by Ayush — 
     <a
-      href="https://github.com/yourprofile"
+      href="https://github.com/TROGER-VU"
       target="_blank"
       className="text-purple-400 mx-2 underline hover:text-purple-200"
     >
@@ -48,7 +48,7 @@ const Footer = () => (
     </a>
     |
     <a
-      href="https://linkedin.com/in/yourprofile"
+      href="www.linkedin.com/in/ayush-gupta105"
       target="_blank"
       className="text-purple-400 mx-2 underline hover:text-purple-200"
     >
@@ -105,7 +105,7 @@ const LandingPage = () => {
             </span>
           </div>
           <a
-            href="https://github.com/ayushxyz/slack-pulse"
+            href="https://github.com/TROGER-VU/slack-connect"
             className="text-sm font-semibold text-purple-400 hover:underline hover:text-purple-200"
             target="_blank"
           >
