@@ -3,21 +3,28 @@ import UserToken from "../models/token.model";
 import { postSlackMessage } from "../services/slack.service";
 import ScheduledMessage from "../models/scheduledMessage.model";
 import { Types } from "mongoose";
+import { AuthenticatedRequest } from "../middlewares/auth.middleware";
+import { getValidAccessToken } from "../services/token.service";
 
-export const sendMessage = async (req: Request, res: Response) => {
-  const { team_id, user_id, channel_id, text } = req.body;
+
+export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
+  const { channel_id, text } = req.body;
+  const { team_id, user_id } = req.user!;
 
   if (!team_id || !user_id || !channel_id || !text) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const userToken = await UserToken.findOne({ team_id, user_id });
-  if (!userToken || !userToken.access_token) {
-    return res.status(401).json({ error: "Slack not connected for user" });
+  let access_token: string;
+  try {
+    access_token = await getValidAccessToken(team_id, user_id);
+  } catch (err) {
+    console.error("Failed to get valid token:", err);
+    return res.status(401).json({ error: "Slack not connected or token invalid" });
   }
 
   try {
-    const result = await postSlackMessage(userToken.access_token, channel_id, text);
+    const result = await postSlackMessage(access_token, channel_id, text);
     return res.status(200).json({ message: "Message sent", slack_response: result });
   } catch (err) {
     console.error("Error sending Slack message:", err);
@@ -25,8 +32,9 @@ export const sendMessage = async (req: Request, res: Response) => {
   }
 };
 
-export const scheduleMessage = async (req: Request, res: Response) => {
-  const { team_id, user_id, channel_id, text, send_time } = req.body;
+export const scheduleMessage = async (req: AuthenticatedRequest, res: Response) => {
+  const { channel_id, text, send_time } = req.body;
+  const { team_id, user_id } = req.user!;
 
   if (!team_id || !user_id || !channel_id || !text || !send_time) {
     console.log("❌ Missing required fields");
@@ -65,8 +73,8 @@ export const scheduleMessage = async (req: Request, res: Response) => {
 };
 
 // GET /message/scheduled?team_id=...&user_id=...
-export const getScheduledMessages = async (req: Request, res: Response) => {
-  const { team_id, user_id } = req.query;
+export const getScheduledMessages = async (req: AuthenticatedRequest, res: Response) => {
+  const { team_id, user_id } = req.user!;
 
   if (!team_id || !user_id) {
     return res.status(400).json({ error: "Missing team_id or user_id" });
@@ -87,7 +95,7 @@ export const getScheduledMessages = async (req: Request, res: Response) => {
 };
 
 // DELETE /message/:id
-export const deleteScheduledMessage = async (req: Request, res: Response) => {
+export const deleteScheduledMessage = async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
 
   if (!Types.ObjectId.isValid(id)) {

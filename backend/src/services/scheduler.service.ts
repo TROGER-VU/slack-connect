@@ -2,6 +2,8 @@ import cron from "node-cron";
 import ScheduledMessage from "../models/scheduledMessage.model";
 import UserToken from "../models/token.model";
 import { postSlackMessage } from "./slack.service";
+import { getValidAccessToken } from "./token.service";
+
 
 export const startMessageScheduler = () => {
   cron.schedule("*/10 * * * * *", async () => {
@@ -15,15 +17,17 @@ export const startMessageScheduler = () => {
     });
 
     for (const msg of messages) {
-      const tokenDoc = await UserToken.findOne({ team_id: msg.team_id, user_id: msg.user_id });
-
-      if (!tokenDoc) {
-        console.error("⚠️ No token found for message", msg._id);
+      let access_token: string;
+      try {
+        access_token = await getValidAccessToken(msg.team_id, msg.user_id);
+      } catch (err) {
+        console.error(`⚠️ Failed to retrieve valid token for message ${msg._id}:`, err);
         continue;
       }
 
+
       try {
-        await postSlackMessage(tokenDoc.access_token, msg.channel_id, msg.text);
+        await postSlackMessage(access_token, msg.channel_id, msg.text);
         msg.sent = true;
         await msg.save();
         console.log(`Sent message: ${msg._id}`);

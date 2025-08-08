@@ -16,24 +16,6 @@ const ScheduledPage = () => {
   const team_id = localStorage.getItem("team_id") || "T06EF9YEQAK";
   const user_id = localStorage.getItem("user_id") || "U06EP79DCHL";
 
-  // const fetchMessages = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const res = await axios.get(
-  //       `${import.meta.env.VITE_BACKEND_BASE_URL}/message/scheduled`,
-  //       {
-  //         params: { team_id, user_id },
-  //       }
-  //     );
-  //     setMessages(res.data.messages);
-  //   } catch (err) {
-  //     console.error("Failed to fetch scheduled messages:", err);
-  //     alert("❌ Could not load scheduled messages");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const cancelMessage = async (id: string) => {
     const confirm = window.confirm("Are you sure you want to cancel this message?");
     if (!confirm) return;
@@ -47,8 +29,6 @@ const ScheduledPage = () => {
       alert("❌ Could not cancel message");
     }
   };
-//https://8e1818262c6c.ngrok-free.app/message/scheduled?team_id=T06EF9YEQAK&user_id=U06EP79DCHL
-//https://8e1818262c6c.ngrok-free.app/message/scheduled?team_id=T06EF9YEQAK&user_id=U06EP79DCHL
   useEffect(() => {
   const fetchMessages = async () => {
     setLoading(true);
