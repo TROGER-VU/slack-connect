@@ -177,6 +177,7 @@ On first deploy to Render, the app failed due to an undefined MongoDB URI.
 🔍 Learning: Render does not use your local .env file and requires manual addition of env vars via its dashboard.
 
 ✅ Resolution: I added all critical env vars (MONGO_URI, SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, etc.) in the Render settings panel, ensuring successful deployment.
+
 ---
 
 
