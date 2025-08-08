@@ -1,98 +1,118 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
-import dayjs from "dayjs";
+import { useSearchParams } from "react-router-dom";
+import { Trash2, Loader2, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
+// Define a type for the scheduled message object
 type ScheduledMessage = {
   _id: string;
-  text: string;
   channel_id: string;
+  channel_name?: string;
+  text: string;
   send_time: string;
 };
 
-const ScheduledPage = () => {
-  const [messages, setMessages] = useState<ScheduledMessage[]>([]);
-  const [loading, setLoading] = useState(true);
+const SchedulePage = () => {
+  const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const team_id = localStorage.getItem("team_id") || "T06EF9YEQAK";
-  const user_id = localStorage.getItem("user_id") || "U06EP79DCHL";
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const cancelMessage = async (id: string) => {
-    const confirm = window.confirm("Are you sure you want to cancel this message?");
-    if (!confirm) return;
+  const team_id = searchParams.get("team_id");
+  const user_id = searchParams.get("user_id");
 
-    try {
-      await axios.delete(`${import.meta.env.VITE_BACKEND_BASE_URL}/message/${id}`);
-      setMessages((prev) => prev.filter((msg) => msg._id !== id));
-      alert("✅ Message cancelled");
-    } catch (err) {
-      console.error("Failed to delete message:", err);
-      alert("❌ Could not cancel message");
+  const fetchScheduledMessages = async () => {
+    if (!team_id || !user_id) {
+      console.error("❌ Missing team_id or user_id in URL.");
+      setScheduledMessages([]);
+      return;
     }
-  };
-  useEffect(() => {
-  const fetchMessages = async () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_BASE_URL}/message/scheduled`,
-        {
-          params: { team_id, user_id },
-          headers: {
-            'ngrok-skip-browser-warning': 'true'
-          }
-        }
+        `${import.meta.env.VITE_BACKEND_BASE_URL}/message/scheduled?team_id=${team_id}&user_id=${user_id}`
       );
-      const msgs = res.data?.messages;
-      if (Array.isArray(msgs)) {
-        setMessages(msgs);
-      } else {
-        setMessages([]);
-      }
+      setScheduledMessages(res.data.messages);
     } catch (err) {
-      console.error("Failed to fetch scheduled messages:", err);
-      alert("❌ Could not load scheduled messages");
+      console.error("❌ Failed to fetch scheduled messages.", err);
     } finally {
       setLoading(false);
     }
   };
 
-  fetchMessages();
-}, []);
+  const handleDelete = async (messageId: string) => {
+    setDeletingId(messageId);
+    try {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_BASE_URL}/message/${messageId}`);
+      fetchScheduledMessages(); // Refresh list
+    } catch (err) {
+      console.error("❌ Failed to delete scheduled message.", err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
+  useEffect(() => {
+    fetchScheduledMessages();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [team_id, user_id]);
 
   return (
-    <div className="max-w-3xl mx-auto mt-12 p-6">
-      <h1 className="text-3xl font-bold mb-6">📋 Scheduled Messages</h1>
-      {loading ? (
-        <p className="text-gray-500">Loading...</p>
-      ) : messages.length === 0 ? (
-        <p className="text-gray-600">No scheduled messages found.</p>
-      ) : (
-        <div className="space-y-4">
-          {messages.map((msg) => (
-            <div
-              key={msg._id}
-              className="p-4 border rounded shadow-sm bg-white flex justify-between items-start"
-            >
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Channel: {msg.channel_id}</p>
-                <p className="text-lg mb-2">{msg.text}</p>
-                <p className="text-sm text-gray-600">
-                  Scheduled for: {dayjs(msg.send_time).format("YYYY-MM-DD HH:mm")}
-                </p>
-              </div>
-              <button
-                onClick={() => cancelMessage(msg._id)}
-                className="ml-4 bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
-              >
-                Cancel
-              </button>
-            </div>
-          ))}
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center font-sans">
+      <div className="max-w-xl w-full mx-auto p-8 shadow-lg rounded-3xl bg-gray-800 border border-gray-700">
+        <div className="flex justify-between items-center mb-6">
+          <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-white transition-colors">
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <h1 className="text-3xl font-extrabold text-white">Scheduled Messages</h1>
+          <div></div>
         </div>
-      )}
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="animate-spin text-purple-500 w-8 h-8" />
+            <span className="ml-4 text-xl">Loading messages...</span>
+          </div>
+        ) : scheduledMessages.length > 0 ? (
+          <ul className="space-y-4">
+            {scheduledMessages.map((msg) => (
+              <li
+                key={msg._id}
+                className="flex items-center justify-between p-4 bg-gray-700 rounded-lg shadow-md"
+              >
+                <div className="flex-1">
+                  <p className="text-gray-300 text-sm">
+                    Scheduled for: {new Date(msg.send_time).toLocaleString()}
+                  </p>
+                  <p className="font-bold text-lg">{msg.text}</p>
+                  <p className="text-purple-400">{msg.channel_name ? `#${msg.channel_name}` : msg.channel_id}</p>
+                </div>
+                <button
+                  onClick={() => handleDelete(msg._id)}
+                  disabled={deletingId === msg._id}
+                  className="p-2 rounded-full text-red-400 hover:bg-red-500 hover:text-white transition-colors duration-200"
+                >
+                  {deletingId === msg._id ? (
+                    <Loader2 className="animate-spin w-5 h-5" />
+                  ) : (
+                    <Trash2 className="w-5 h-5" />
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="text-center py-12 text-gray-500">
+            <p className="text-xl">No scheduled messages found.</p>
+            <p className="text-md mt-2">Start scheduling messages from the composer!</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-export default ScheduledPage;
+export default SchedulePage;

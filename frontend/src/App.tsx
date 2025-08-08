@@ -1,18 +1,15 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/HomePage.tsx";
-import SendPage from "./pages/SendPage.tsx";
-import SchedulePage from "./pages/SchedulePage.tsx";
 import ScheduledPage from "./pages/ScheduledPage.tsx";
+import LandingPage from "./pages/LandingPage.tsx";
+import MessageComposer from "./pages/MessageComposer.tsx";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/send" element={<SendPage />} />
-        <Route path="/schedule" element={<SchedulePage />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/scheduled" element={<ScheduledPage />} />
-        {/* We’ll add /send, /schedule, /scheduled later */}
+        <Route path="/message" element={<MessageComposer />} />
       </Routes>
     </Router>
   );
